@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>前额叶跟练</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .stage {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 72px 80px 140px;
+    text-align: center;
+    position: relative;
+  }
+  /* 顶部状态条 */
+  .topbar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: 28px 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 17px;
+    color: #94a3b8;
+  }
+  .topbar .progress { display: flex; gap: 10px; }
+  .topbar .dot {
+    width: 44px; height: 6px; border-radius: 3px;
+    background: #334155;
+    transition: background 0.3s;
+  }
+  .topbar .dot.active { background: #38bdf8; }
+  .topbar .dot.done { background: #10b981; }
+  /* 标题区 */
+  .title { font-size: 56px; font-weight: 600; margin-bottom: 28px; color: #f1f5f9; }
+  .subtitle { font-size: 22px; color: #94a3b8; margin-bottom: 72px; min-height: 32px; }
+  /* 计时器 */
+  .timer {
+    font-size: 120px;
+    font-weight: 700;
+    color: #38bdf8;
+    margin-top: 72px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 4px;
+  }
+  .timer.small { font-size: 96px; }
+  /* 内容区 */
+  .content {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    min-height: 540px;
+  }
+  /* 按钮 */
+  .btn {
+    background: #38bdf8;
+    color: #0f172a;
+    border: none;
+    padding: 14px 48px;
+    font-size: 17px;
+    font-weight: 600;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform 0.15s, background 0.2s;
+    box-shadow: 0 4px 20px rgba(56, 189, 248, 0.3);
+  }
+  .btn:hover { background: #7dd3fc; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+  .btn.secondary {
+    background: transparent;
+    color: #94a3b8;
+    border: 1px solid #334155;
+    box-shadow: none;
+    padding: 10px 28px;
+    font-size: 14px;
+    margin-left: 12px;
+  }
+  .btn.secondary:hover { color: #e2e8f0; border-color: #475569; }
+  .controls { display: flex; gap: 12px; margin-top: 16px; }
+
+  /* 浮动控制条（所有屏幕共享） */
+  .floating-controls {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    z-index: 10;
+  }
+  .floating-controls .btn { padding: 10px 28px; font-size: 14px; }
+  .floating-controls .btn.skip { color: #fbbf24; border-color: #b45309; }
+  .floating-controls .btn.skip:hover { background: rgba(251, 191, 36, 0.1); color: #fcd34d; border-color: #d97706; }
+
+  /* === 训练1：呼吸 === */
+  .breath-wrap { display: flex; flex-direction: column; align-items: center; gap: 48px; }
+  .breath-circle {
+    width: 400px; height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(56,189,248,0.4), rgba(56,189,248,0.1));
+    border: 4px solid #38bdf8;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #f1f5f9;
+    transition: transform 4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .breath-circle.inhale { transform: scale(1.6); transition-duration: 4s; }
+  .breath-circle.exhale { transform: scale(1); transition-duration: 6s; }
+  .breath-phase { font-size: 42px; font-weight: 600; }
+  .breath-cd { font-size: 96px; font-weight: 700; color: #38bdf8; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .breath-count { font-size: 22px; color: #94a3b8; }
+
+  /* === 训练2：反扫视 === */
+  .saccade {
+    display: flex; justify-content: center; align-items: center;
+    gap: 400px;
+    width: 100%;
+    padding: 0 60px;
+    box-sizing: border-box;
+    flex-wrap: nowrap;
+  }
+  .emoji {
+    font-size: 110px;
+    width: 180px; height: 180px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    background: #1e293b;
+    border: 4px solid #334155;
+    transition: transform 0.18s ease-out, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .emoji.center { border-color: #475569; }
+  .emoji.bounce { transform: translateY(-32px) scale(1.2); }
+  /* target 类不再加亮，保持低调 */
+  .arrow-hint {
+    position: absolute;
+    bottom: -40px; left: 50%; transform: translateX(-50%);
+    font-size: 24px; color: #f59e0b;
+    animation: pulse 0.6s ease-in-out infinite alternate;
+  }
+  @keyframes pulse {
+    from { opacity: 0.5; }
+    to { opacity: 1; }
+  }
+
+  /* === 训练3：凝视 === */
+  .gaze-wrap { position: relative; width: 560px; height: 560px; overflow: hidden; border-radius: 50%; border: 2px dashed #334155; }
+  .gaze-dot {
+    position: absolute; top: 50%; left: 50%;
+    width: 48px; height: 48px;
+    background: #ef4444;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 50px rgba(239, 68, 68, 0.7);
+    z-index: 2;
+  }
+  .gaze-dot::after {
+    content: '';
+    position: absolute; inset: -14px;
+    border: 3px solid rgba(239, 68, 68, 0.3);
+    border-radius: 50%;
+    animation: ripple 1.5s ease-out infinite;
+  }
+  @keyframes ripple {
+    from { transform: scale(1); opacity: 1; }
+    to { transform: scale(1.8); opacity: 0; }
+  }
+  .distractor {
+    position: absolute;
+    font-size: 44px;
+    opacity: 0.5;
+    filter: grayscale(0.4);
+    animation: float 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(20px, -15px) rotate(10deg); }
+    50% { transform: translate(-15px, -20px) rotate(-5deg); }
+    75% { transform: translate(-20px, 15px) rotate(8deg); }
+  }
+
+  /* === 训练4：持续注意力 === */
+  .attention {
+    display: flex; flex-direction: column; align-items: center; gap: 48px;
+  }
+  .big-letter {
+    font-size: 340px;
+    font-weight: 800;
+    color: #f1f5f9;
+    line-height: 1;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 20px;
+  }
+  .target-hint {
+    background: rgba(245, 158, 11, 0.15);
+    border: 2px solid #f59e0b;
+    color: #fbbf24;
+    padding: 18px 36px;
+    border-radius: 12px;
+    font-size: 24px;
+  }
+  .target-hint b { font-size: 38px; color: #f59e0b; margin: 0 8px; }
+  .flash {
+    animation: flash 0.3s;
+  }
+  @keyframes flash {
+    0%, 100% { background: transparent; }
+    50% { background: rgba(245, 158, 11, 0.3); }
+  }
+
+  /* === 训练5：数字倒背 === */
+  .digit-display {
+    font-size: 160px;
+    font-weight: 700;
+    color: #38bdf8;
+    letter-spacing: 28px;
+    font-family: 'Courier New', monospace;
+    line-height: 1;
+  }
+  .digit-prompt {
+    margin-top: 48px;
+    font-size: 22px;
+    color: #94a3b8;
+  }
+  .digit-actions { margin-top: 32px; display: flex; gap: 16px; }
+  .digit-btn {
+    background: #1e293b;
+    color: #e2e8f0;
+    border: 2px solid #334155;
+    padding: 14px 32px;
+    font-size: 18px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .digit-btn:hover { border-color: #38bdf8; color: #38bdf8; }
+
+  /* === 休息 === */
+  .rest {
+    display: flex; flex-direction: column; align-items: center; gap: 32px;
+  }
+  .rest-icon {
+    font-size: 140px;
+    animation: breathe-rest 3s ease-in-out infinite;
+  }
+  @keyframes breathe-rest {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+  .next-hint { color: #64748b; font-size: 18px; margin-top: 8px; }
+
+  /* === 完成 === */
+  .done-wrap { text-align: center; }
+  .done-icon { font-size: 180px; margin-bottom: 32px; }
+  .done-title { font-size: 60px; color: #10b981; margin-bottom: 20px; }
+  .done-sub { color: #94a3b8; margin-bottom: 48px; font-size: 22px; }
+
+  /* 隐藏 */
+  .hidden { display: none !important; }
+
+  @media (max-width: 1500px) {
+    .saccade { gap: 280px; }
+  }
+  @media (max-width: 1100px) {
+    .title { font-size: 42px; margin-bottom: 20px; }
+    .subtitle { font-size: 18px; margin-bottom: 48px; }
+    .timer { font-size: 88px; margin-top: 48px; }
+    .breath-circle { width: 320px; height: 320px; }
+    .breath-phase { font-size: 32px; }
+    .breath-cd { font-size: 72px; }
+    .big-letter { font-size: 240px; }
+    .digit-display { font-size: 120px; letter-spacing: 18px; }
+    .gaze-wrap { width: 440px; height: 440px; }
+    .emoji { font-size: 84px; width: 140px; height: 140px; }
+    .saccade { gap: 200px; padding: 0 40px; }
+    .stage { padding: 56px 40px 130px; }
+  }
+  @media (max-width: 720px) {
+    .title { font-size: 28px; margin-bottom: 14px; }
+    .subtitle { font-size: 15px; margin-bottom: 28px; }
+    .timer { font-size: 56px; margin-top: 24px; }
+    .breath-circle { width: 240px; height: 240px; }
+    .breath-phase { font-size: 24px; }
+    .breath-cd { font-size: 48px; }
+    .big-letter { font-size: 160px; }
+    .digit-display { font-size: 72px; letter-spacing: 12px; }
+    .gaze-wrap { width: 320px; height: 320px; }
+    .emoji { font-size: 60px; width: 110px; height: 110px; }
+    .saccade { gap: 120px; padding: 0 20px; }
+    .stage { padding: 36px 24px 120px; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="topbar">
+    <div>前额叶跟练</div>
+    <div class="progress" id="progress"></div>
+    <div id="stepLabel">1/5</div>
+  </div>
+
+  <!-- 训练1：呼吸 -->
+  <div class="screen" id="screen-breath">
+    <div class="title">4-6 呼吸法</div>
+    <div class="subtitle">鼻吸 4 秒 · 口呼 6 秒 · 共 6 次</div>
+    <div class="content">
+      <div class="breath-wrap">
+        <div class="breath-circle" id="breathCircle">
+          <div class="breath-phase" id="breathPhase">准备</div>
+          <div class="breath-cd" id="breathCD">—</div>
+        </div>
+        <div class="breath-count" id="breathCount">第 0 / 6 次</div>
+      </div>
+    </div>
+    <div class="timer" id="timer-breath">60</div>
+  </div>
+
+  <!-- 训练2：反扫视 -->
+  <div class="screen hidden" id="screen-saccade">
+    <div class="title">反扫视训练</div>
+    <div class="subtitle">看到笑脸弹跳，眼睛看<span style="color:#f59e0b">相反</span>方向，然后回到中间</div>
+    <div class="content">
+      <div class="saccade" id="saccade">
+        <div class="emoji" data-pos="left">😊</div>
+        <div class="emoji center" data-pos="center">😄</div>
+        <div class="emoji" data-pos="right">😊</div>
+      </div>
+    </div>
+    <div class="timer" id="timer-saccade">30</div>
+  </div>
+
+  <!-- 训练3：凝视 -->
+  <div class="screen hidden" id="screen-gaze">
+    <div class="title">凝视专注 · 抗干扰</div>
+    <div class="subtitle">盯住红点，忽略周围所有干扰</div>
+    <div class="content">
+      <div class="gaze-wrap" id="gazeWrap">
+        <div class="gaze-dot"></div>
+      </div>
+    </div>
+    <div class="timer" id="timer-gaze">20</div>
+  </div>
+
+  <!-- 训练4：持续注意力 -->
+  <div class="screen hidden" id="screen-attention">
+    <div class="title">持续注意力</div>
+    <div class="subtitle">字母/数字快速切换，看到目标就拍桌子</div>
+    <div class="content">
+      <div class="attention">
+        <div class="target-hint">当出现 <b id="targetChar">0</b> 时拍桌子</div>
+        <div class="big-letter" id="bigLetter">A</div>
+      </div>
+    </div>
+    <div class="timer" id="timer-attention">40</div>
+  </div>
+
+  <!-- 训练5：数字倒背 -->
+  <div class="screen hidden" id="screen-digit">
+    <div class="title">数字倒背</div>
+    <div class="subtitle">记住这串数字，然后倒着念出来</div>
+    <div class="content">
+      <div class="digit-display" id="digitDisplay">8 3 5 1 7</div>
+      <div class="digit-prompt" id="digitPrompt">3 秒后开始记忆…</div>
+    </div>
+    <div class="timer" id="timer-digit">30</div>
+    <div class="digit-actions">
+      <button class="digit-btn" id="btn-showDigits">显示数字</button>
+      <button class="digit-btn" id="btn-nextDigit">换一组</button>
+    </div>
+  </div>
+
+  <!-- 休息 -->
+  <div class="screen hidden" id="screen-rest">
+    <div class="rest">
+      <div class="rest-icon">🌿</div>
+      <div class="title" id="restTitle">休息一下</div>
+      <div class="subtitle" id="restSub">下一项：反扫视训练</div>
+      <div class="timer" id="timer-rest">10</div>
+    </div>
+  </div>
+
+  <!-- 完成 -->
+  <div class="screen hidden" id="screen-done">
+    <div class="done-wrap">
+      <div class="done-icon">🎉</div>
+      <div class="done-title">训练完成！</div>
+      <div class="done-sub">前额叶跟练 5 项 · 全部完成</div>
+      <button class="btn" id="btn-again" style="margin-top: 24px;">再来一次</button>
+    </div>
+  </div>
+
+  <!-- 全局控制条 -->
+  <div class="floating-controls" id="floatingControls">
+    <button class="btn" id="btn-start">开始训练</button>
+    <button class="btn secondary hidden" id="btn-pause">暂停</button>
+    <button class="btn secondary skip hidden" id="btn-skip">下一项 →</button>
+    <button class="btn secondary" id="btn-reset">重置</button>
+  </div>
+</div>
+
+<script>
+  // ============ 配置 ============
+  const STEPS = [
+    { id: 'breath',     name: '4-6 呼吸法',    duration: 60, type: 'breath' },   // 4+6=10s × 6 次
+    { id: 'saccade',    name: '反扫视训练',    duration: 30, type: 'saccade' },
+    { id: 'gaze',       name: '凝视专注',      duration: 20, type: 'gaze' },
+    { id: 'attention',  name: '持续注意力',    duration: 40, type: 'attention' },
+    { id: 'digit',      name: '数字倒背',      duration: 30, type: 'digit' },
+  ];
+  const REST_DURATION = 10;
+  const REST_AFTER_TRAIN = true;
+
+  // ============ 状态 ============
+  let currentStep = 0;     // 训练序号 0..4
+  let inRest = false;
+  let timeLeft = 0;
+  let timerId = null;
+  let paused = false;
+  let started = false;
+  // 各训练内部状态
+  let breathRound = 0;        // 0..6
+  let breathPhase = 'idle';   // 'inhale' | 'exhale' | 'idle'
+  let breathTimer = null;
+  let saccadeTimer = null;
+  let gazeInterval = null;
+  let attentionInterval = null;
+  let targetChar = '0';
+  let digitSequence = '';
+  let digitShowPhase = 'preview'; // 'preview' | 'recall'
+
+  // ============ DOM ============
+  const $ = (id) => document.getElementById(id);
+  const screens = {
+    breath:    $('screen-breath'),
+    saccade:   $('screen-saccade'),
+    gaze:      $('screen-gaze'),
+    attention: $('screen-attention'),
+    digit:     $('screen-digit'),
+    rest:      $('screen-rest'),
+    done:      $('screen-done'),
+  };
+  const timers = {
+    breath:    $('timer-breath'),
+    saccade:   $('timer-saccade'),
+    gaze:      $('timer-gaze'),
+    attention: $('timer-attention'),
+    digit:     $('timer-digit'),
+    rest:      $('timer-rest'),
+  };
+
+  // ============ 进度条 ============
+  function renderProgress() {
+    const wrap = $('progress');
+    wrap.innerHTML = '';
+    for (let i = 0; i < STEPS.length; i++) {
+      const d = document.createElement('div');
+      d.className = 'dot';
+      if (i < currentStep) d.classList.add('done');
+      else if (i === currentStep && !inRest) d.classList.add('active');
+      wrap.appendChild(d);
+    }
+    $('stepLabel').textContent = `${Math.min(currentStep+1, STEPS.length)}/${STEPS.length}`;
+  }
+
+  // ============ 屏幕切换 ============
+  function showScreen(id) {
+    Object.values(screens).forEach(s => s.classList.add('hidden'));
+    screens[id].classList.remove('hidden');
+  }
+
+  // ============ 计时器 ============
+  function startCountdown(duration, onDone) {
+    clearInterval(timerId);
+    timeLeft = duration;
+    updateTimer(duration);
+    timerId = setInterval(() => {
+      if (paused) return;
+      timeLeft--;
+      updateTimer(timeLeft);
+      if (timeLeft <= 0) {
+        clearInterval(timerId);
+        onDone && onDone();
+      }
+    }, 1000);
+  }
+  function updateTimer(t) {
+    const id = currentStepId() + (inRest ? '' : '');
+    const el = timers[id] || timers.rest;
+    if (el) el.textContent = t;
+  }
+  function currentStepId() {
+    return inRest ? 'rest' : STEPS[currentStep].id;
+  }
+
+  // ============ 训练1：呼吸 ============
+  let breathCountdown = 0;     // 当前阶段剩余秒数
+  let breathCDInterval = null; // 每秒更新倒计时
+  function startBreath() {
+    breathRound = 0;
+    breathPhase = 'inhale';
+    breathCountdown = 4;
+    setBreathUI();
+    clearTimeout(breathTimer);
+    clearInterval(breathCDInterval);
+    breathCDInterval = setInterval(updateBreathCD, 1000);
+    breathTimer = setTimeout(breathTick, 4000);
+  }
+  function updateBreathCD() {
+    if (paused) return;
+    breathCountdown--;
+    if (breathCountdown <= 0) {
+      // 到 0 时不再显示，等下一阶段刷新
+      return;
+    }
+    $('breathCD').textContent = breathCountdown;
+  }
+  function breathTick() {
+    if (paused) { breathTimer = setTimeout(breathTick, 500); return; }
+    clearInterval(breathCDInterval);
+    if (breathPhase === 'inhale') {
+      breathPhase = 'exhale';
+      breathCountdown = 6;
+      setBreathUI();
+      breathCDInterval = setInterval(updateBreathCD, 1000);
+      breathTimer = setTimeout(breathTick, 6000);
+    } else {
+      breathRound++;
+      if (breathRound >= 6) {
+        setBreathUI();
+        finishStep();
+        return;
+      }
+      breathPhase = 'inhale';
+      breathCountdown = 4;
+      setBreathUI();
+      breathCDInterval = setInterval(updateBreathCD, 1000);
+      breathTimer = setTimeout(breathTick, 4000);
+    }
+  }
+  function setBreathUI() {
+    const c = $('breathCircle');
+    const phase = $('breathPhase');
+    const cd = $('breathCD');
+    const count = $('breathCount');
+    if (breathPhase === 'inhale') {
+      c.classList.add('inhale'); c.classList.remove('exhale');
+      phase.textContent = '吸气';
+      cd.textContent = breathCountdown > 0 ? breathCountdown : '—';
+    } else if (breathPhase === 'exhale') {
+      c.classList.add('exhale'); c.classList.remove('inhale');
+      phase.textContent = '呼气';
+      cd.textContent = breathCountdown > 0 ? breathCountdown : '—';
+    } else {
+      c.classList.remove('inhale', 'exhale');
+      phase.textContent = '准备';
+      cd.textContent = '—';
+    }
+    count.textContent = `第 ${breathRound} / 6 次`;
+  }
+  function stopBreath() {
+    clearTimeout(breathTimer);
+    clearInterval(breathCDInterval);
+    breathRound = 0;
+    breathPhase = 'idle';
+    breathCountdown = 0;
+    setBreathUI();
+  }
+
+  // ============ 训练2：反扫视 ============
+  let saccadeBounceCount = 0;
+  function startSaccade() {
+    saccadeBounceCount = 0;
+    clearTimeout(saccadeTimer);
+    saccadeTick();
+  }
+  function saccadeTick() {
+    if (paused) { saccadeTimer = setTimeout(saccadeTick, 400); return; }
+    // 随机选左或右（中间不参与弹跳）
+    const side = Math.random() < 0.5 ? 'left' : 'right';
+    // 清除所有状态
+    document.querySelectorAll('#saccade .emoji').forEach(el => {
+      el.classList.remove('bounce', 'target');
+    });
+    // 选中的那一侧快速跳两下
+    const el = document.querySelector(`#saccade .emoji[data-pos="${side}"]`);
+    let n = 0;
+    function oneBounce() {
+      if (paused) { setTimeout(oneBounce, 300); return; }
+      el.classList.add('bounce');
+      setTimeout(() => {
+        el.classList.remove('bounce');
+        n++;
+        if (n < 2) {
+          setTimeout(oneBounce, 180);
+        }
+      }, 180);
+    }
+    oneBounce();
+    // 下次弹跳间隔
+    saccadeTimer = setTimeout(saccadeTick, 1500 + Math.random() * 1200);
+  }
+  function stopSaccade() {
+    clearTimeout(saccadeTimer);
+    document.querySelectorAll('#saccade .emoji').forEach(el => {
+      el.classList.remove('bounce');
+    });
+  }
+
+  // ============ 训练3：凝视 ============
+  let gazeSpawnActive = false;
+  function startGaze() {
+    const wrap = $('gazeWrap');
+    wrap.querySelectorAll('.distractor').forEach(d => d.remove());
+    const distractors = ['⭐', '✨', '💫', '🌟', '⚡', '💥', '🔆', '🔅', '🎯', '🎪', '🎨', '🎭', '🎲', '🎮'];
+    gazeSpawnActive = true;
+    function spawn() {
+      if (!gazeSpawnActive) return;
+      if (paused) { setTimeout(spawn, 400); return; }
+      const d = document.createElement('div');
+      d.className = 'distractor';
+      d.textContent = distractors[Math.floor(Math.random() * distractors.length)];
+      const r = wrap.getBoundingClientRect();
+      const size = 36;
+      // 中心保护区 (50px 半径内不放)
+      let x, y, dist;
+      let tries = 0;
+      do {
+        x = Math.random() * (r.width - size);
+        y = Math.random() * (r.height - size);
+        const cx = r.width / 2, cy = r.height / 2;
+        dist = Math.hypot(x + size/2 - cx, y + size/2 - cy);
+        tries++;
+      } while (dist < 70 && tries < 20);
+      d.style.left = x + 'px';
+      d.style.top = y + 'px';
+      d.style.animationDuration = (2 + Math.random() * 2) + 's';
+      wrap.appendChild(d);
+      setTimeout(() => d.remove(), 4500);
+      setTimeout(spawn, 250 + Math.random() * 350);
+    }
+    spawn();
+  }
+  function stopGaze() {
+    gazeSpawnActive = false;
+    $('gazeWrap').querySelectorAll('.distractor').forEach(d => d.remove());
+  }
+
+  // ============ 训练4：持续注意力 ============
+  const POOL = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  function startAttention() {
+    targetChar = POOL[Math.floor(Math.random() * POOL.length)];
+    $('targetChar').textContent = targetChar;
+    $('bigLetter').textContent = pickRandom();
+    window.addEventListener('keydown', onTap);
+    clearInterval(attentionInterval);
+    attentionInterval = setInterval(() => {
+      if (paused) return;
+      $('bigLetter').textContent = pickRandom();
+    }, 700);
+  }
+  function pickRandom() {
+    if (Math.random() < 0.25) return targetChar;
+    let c;
+    do { c = POOL[Math.floor(Math.random() * POOL.length)]; } while (c === targetChar);
+    return c;
+  }
+  function onTap(e) {
+    if (paused || !started) return;
+    if (currentStep !== 3) return; // 只在 attention 步骤生效
+    // 只把"空格键"当作拍桌子
+    if (e.code !== 'Space' && e.key !== ' ') return;
+    const cur = $('bigLetter').textContent;
+    if (cur === targetChar) {
+      // 命中：闪光 + 简短"咚"声
+      document.body.classList.add('flash');
+      setTimeout(() => document.body.classList.remove('flash'), 300);
+      playBeep(880, 0.08);
+    } else {
+      // 误拍：低沉提示音
+      playBeep(220, 0.15);
+    }
+  }
+  function stopAttention() {
+    clearInterval(attentionInterval);
+    window.removeEventListener('keydown', onTap);
+  }
+  // 简易蜂鸣（Web Audio）
+  let audioCtx = null;
+  function playBeep(freq, dur) {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.connect(g); g.connect(audioCtx.destination);
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      o.start();
+      o.stop(audioCtx.currentTime + dur);
+    } catch (e) { /* 忽略音频错误 */ }
+  }
+
+  // ============ 训练5：数字倒背 ============
+  function newDigits() {
+    const len = 5 + Math.floor(Math.random() * 2); // 5-6 位
+    let s = '';
+    for (let i = 0; i < len; i++) s += Math.floor(Math.random() * 10);
+    digitSequence = s;
+    $('digitDisplay').textContent = s.split('').join(' ');
+    $('digitPrompt').textContent = '3 秒后开始记忆…';
+  }
+  function startDigit() {
+    newDigits();
+    digitShowPhase = 'preview';
+    function switchToRecall() {
+      if (!started || currentStep !== 4) return;
+      if (paused) { setTimeout(switchToRecall, 400); return; }
+      $('digitDisplay').textContent = '? ? ?';
+      $('digitPrompt').textContent = '请倒着念出这串数字';
+      digitShowPhase = 'recall';
+    }
+    setTimeout(switchToRecall, 3000);
+  }
+  function stopDigit() {
+    // nothing
+  }
+  $('btn-showDigits').addEventListener('click', () => {
+    $('digitDisplay').textContent = digitSequence.split('').join(' ');
+    $('digitPrompt').textContent = '再记 2 秒…';
+    setTimeout(() => {
+      if (currentStep === 4) {
+        $('digitDisplay').textContent = '? ? ?';
+        $('digitPrompt').textContent = '请倒着念出这串数字';
+      }
+    }, 2000);
+  });
+  $('btn-nextDigit').addEventListener('click', newDigits);
+
+  // ============ 训练主流程 ============
+  function startStep() {
+    const step = STEPS[currentStep];
+    showScreen(step.id);
+    renderProgress();
+    started = true;
+    paused = false;
+    // 控制按钮状态
+    $('btn-pause').classList.remove('hidden');
+    $('btn-pause').textContent = '暂停';
+    $('btn-skip').classList.remove('hidden');
+    $('btn-start').textContent = '训练中…';
+    $('btn-start').disabled = true;
+
+    // 启动训练内容
+    switch (step.type) {
+      case 'breath':    startBreath(); break;
+      case 'saccade':   startSaccade(); break;
+      case 'gaze':      startGaze(); break;
+      case 'attention': startAttention(); break;
+      case 'digit':     startDigit(); break;
+    }
+    // 启动倒计时
+    startCountdown(step.duration, finishStep);
+  }
+  function finishStep() {
+    // 停掉当前训练
+    switch (STEPS[currentStep].type) {
+      case 'breath':    stopBreath(); break;
+      case 'saccade':   stopSaccade(); break;
+      case 'gaze':      stopGaze(); break;
+      case 'attention': stopAttention(); break;
+      case 'digit':     stopDigit(); break;
+    }
+    // 进入休息或下一项
+    if (REST_AFTER_TRAIN) {
+      startRest();
+    } else {
+      nextStep();
+    }
+  }
+  function startRest() {
+    inRest = true;
+    showScreen('rest');
+    const nextIdx = currentStep + 1;
+    $('restTitle').textContent = '休息一下';
+    $('restSub').textContent = nextIdx < STEPS.length
+      ? `下一项：${STEPS[nextIdx].name}`
+      : '即将完成…';
+    renderProgress();
+    startCountdown(REST_DURATION, () => {
+      inRest = false;
+      nextStep();
+    });
+  }
+
+  // 跳到下一步
+  function skipCurrent() {
+    clearInterval(timerId);
+    if (inRest) {
+      inRest = false;
+      nextStep();
+    } else {
+      finishStep();
+    }
+  }
+  function nextStep() {
+    currentStep++;
+    if (currentStep >= STEPS.length) {
+      showDone();
+      return;
+    }
+    startStep();
+  }
+
+  // 完成态：隐藏开始/暂停，只显示"再来一次"
+  function showDone() {
+    started = false;
+    showScreen('done');
+    renderProgress();
+    $('floatingControls').classList.add('hidden');
+  }
+
+  // 键盘 → 也可跳过
+  window.addEventListener('keydown', (e) => {
+    if (!started) return;
+    if (e.key === 'ArrowRight' || e.key === 'n' || e.key === 'N') {
+      e.preventDefault();
+      skipCurrent();
+    }
+  });
+
+  // ============ 控制按钮 ============
+  $('btn-start').addEventListener('click', () => {
+    if (!started) {
+      // 第一次：开启第一个训练
+      startStep();
+    } else {
+      paused = false;
+      $('btn-pause').classList.add('hidden');
+    }
+  });
+  $('btn-pause').addEventListener('click', () => {
+    paused = !paused;
+    $('btn-pause').textContent = paused ? '继续' : '暂停';
+  });
+  $('btn-reset').addEventListener('click', () => {
+    if (confirm('确定要重置训练吗？')) location.reload();
+  });
+  $('btn-again').addEventListener('click', () => location.reload());
+  $('btn-skip').addEventListener('click', () => {
+    if (!started) return;
+    if (confirm('确定跳过当前环节？')) skipCurrent();
+  });
+
+  // 键盘空格 = 暂停（注意力训练除外，那里空格 = 拍桌子）
+  window.addEventListener('keydown', (e) => {
+    if (e.code !== 'Space' && e.key !== ' ') return;
+    if (!started || inRest) return;
+    if (currentStep === 3) return; // 注意力训练：空格=拍桌子
+    e.preventDefault();
+    paused = !paused;
+    $('btn-pause').textContent = paused ? '继续' : '暂停';
+  });
+
+  // 初始化进度条
+  renderProgress();
+</script>
+</body>
+</html>
