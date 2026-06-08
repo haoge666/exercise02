@@ -1,25 +1,43 @@
-# 前额叶跟练
+# Prefrontal Cortex Training
 
-一个简单的 HTML 训练界面，包含 5 项前额叶训练：
+A simple, single-file HTML training interface for five prefrontal-cortex exercises, designed for PC full-screen use.
 
-1. **4-6 呼吸法**（60s）— 鼻吸 4 秒，口呼 6 秒，共 6 次
-2. **反扫视训练**（30s）— 哪边笑脸弹跳，眼睛看相反方向
-3. **凝视专注·抗干扰**（20s）— 盯住红点，忽略周围干扰
-4. **持续注意力**（40s）— 字母/数字快速切换，看到目标就拍桌子（按空格）
-5. **数字倒背**（30s）— 记住数字串，倒着念出来
+## Exercises
 
-## 使用方法
+| # | Exercise                  | Duration | Description |
+|---|---------------------------|----------|-------------|
+| 1 | 4-6 Breathing             | 60s      | Inhale 4s through the nose, exhale 6s through the mouth, 6 rounds |
+| 2 | Anti-saccade              | 30s      | When a side smiley bounces, look at the smiley on the opposite side |
+| 3 | Focused Gaze              | 20s      | Stare at the red dot, ignore all surrounding distractions |
+| 4 | Sustained Attention       | 60s      | Letters/digits switch rapidly; hit the spacebar (slap the desk) when the target appears |
+| 5 | Digit Span Reversal       | 30s      | Memorize the digit string, then read it backwards |
 
-直接用浏览器打开 `前额叶跟练.html` 即可。
+## Flow
 
-- **空格键** — 暂停训练（注意力训练中除外，那里空格 = 拍桌子）
-- **→ / N 键** — 跳过当前环节
-- **点击「下一项 →」** — 跳过当前环节
+`5s Ready → Breathing → 10s Rest → Anti-saccade → 10s Rest → Focused Gaze → 10s Rest → Sustained Attention → 10s Rest → Digit Span Reversal → Done`
 
-## 训练流程
+Total: ~4 minutes.
 
-呼吸 → 休息 10s → 反扫视 → 休息 10s → 凝视 → 休息 10s → 持续注意力 → 休息 10s → 数字倒背 → 完成
+## Usage
 
-## 文件
+Just open `index.html` in any modern browser (Chrome / Edge / Firefox / Safari).
 
-- `前额叶跟练.html` — 主程序，单文件无依赖
+### Controls
+
+- **Click "开始训练"** — Start the session
+- **Spacebar** — Pause / resume (in Sustained Attention, Space = slap the desk)
+- **→ arrow / N** — Skip current step
+- **Click "下一项 →"** — Skip current step
+- **Click "重置"** — Reset everything
+
+## Design Notes
+
+- Single self-contained HTML file, no build step, no dependencies
+- Full-screen PC-first layout (titles 56px, timers 120px, etc.)
+- 5-second "Ready" countdown before the first exercise to let the user settle in
+- 10-second rest between exercises with a hint of what's next
+- All UI is Chinese (target audience); browser `<title>` is English
+
+## File
+
+- `index.html` — The entire app
