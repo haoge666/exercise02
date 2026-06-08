@@ -417,6 +417,16 @@
     </div>
   </div>
 
+  <!-- 准备 -->
+  <div class="screen hidden" id="screen-ready">
+    <div class="rest">
+      <div class="rest-icon">🎯</div>
+      <div class="title" id="readyTitle">准备开始</div>
+      <div class="subtitle" id="readySub">即将开始：4-6 呼吸法</div>
+      <div class="timer" id="timer-ready">5</div>
+    </div>
+  </div>
+
   <!-- 休息 -->
   <div class="screen hidden" id="screen-rest">
     <div class="rest">
@@ -461,6 +471,7 @@
   // ============ 状态 ============
   let currentStep = 0;     // 训练序号 0..4
   let inRest = false;
+  let inReady = false;
   let timeLeft = 0;
   let timerId = null;
   let paused = false;
@@ -484,6 +495,7 @@
     gaze:      $('screen-gaze'),
     attention: $('screen-attention'),
     digit:     $('screen-digit'),
+    ready:     $('screen-ready'),
     rest:      $('screen-rest'),
     done:      $('screen-done'),
   };
@@ -785,11 +797,32 @@
   $('btn-nextDigit').addEventListener('click', newDigits);
 
   // ============ 训练主流程 ============
+  function startReady() {
+    inReady = true;
+    showScreen('ready');
+    $('readyTitle').textContent = '准备开始';
+    $('readySub').textContent = `即将开始：${STEPS[0].name}`;
+    renderProgress();
+    let left = 5;
+    $('timer-ready').textContent = left;
+    clearInterval(timerId);
+    timerId = setInterval(() => {
+      if (paused) return;
+      left--;
+      if (left <= 0) {
+        clearInterval(timerId);
+        startStep();
+        return;
+      }
+      $('timer-ready').textContent = left;
+    }, 1000);
+  }
   function startStep() {
     const step = STEPS[currentStep];
     showScreen(step.id);
     renderProgress();
     started = true;
+    inReady = false;
     paused = false;
     // 控制按钮状态
     $('btn-pause').classList.remove('hidden');
@@ -846,6 +879,9 @@
     if (inRest) {
       inRest = false;
       nextStep();
+    } else if (inReady) {
+      inReady = false;
+      startStep();
     } else {
       finishStep();
     }
@@ -878,8 +914,12 @@
 
   // ============ 控制按钮 ============
   $('btn-start').addEventListener('click', () => {
-    if (!started) {
-      // 第一次：开启第一个训练
+    if (!started && !inReady) {
+      // 第一次：进入 5 秒准备
+      startReady();
+    } else if (inReady) {
+      // 准备中再点一次 = 跳过准备
+      clearInterval(timerId);
       startStep();
     } else {
       paused = false;
