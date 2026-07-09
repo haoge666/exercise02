@@ -237,6 +237,12 @@
     font-family: 'Courier New', monospace;
     letter-spacing: 20px;
   }
+  .big-letter.is-plus {
+    font-size: 180px;
+    color: #94a3b8;
+    opacity: 0.55;
+    letter-spacing: 0;
+  }
   .target-hint {
     background: rgba(245, 158, 11, 0.15);
     border: 2px solid #f59e0b;
@@ -485,6 +491,7 @@
   let saccadeTimer = null;
   let gazeInterval = null;
   let attentionInterval = null;
+  let attentionPhase = 'letter'; // 'letter' | 'plus'
   let targetChar = '0';
   let digitSequence = '';
   let digitShowPhase = 'preview'; // 'preview' | 'recall'
@@ -712,12 +719,23 @@
   function startAttention() {
     targetChar = POOL[Math.floor(Math.random() * POOL.length)];
     $('targetChar').textContent = targetChar;
-    $('bigLetter').textContent = pickRandom();
+    const letterEl = $('bigLetter');
+    letterEl.textContent = '+';
+    letterEl.classList.add('is-plus');
+    attentionPhase = 'plus';
     window.addEventListener('keydown', onTap);
     clearInterval(attentionInterval);
     attentionInterval = setInterval(() => {
       if (paused) return;
-      $('bigLetter').textContent = pickRandom();
+      if (attentionPhase === 'letter') {
+        letterEl.textContent = '+';
+        letterEl.classList.add('is-plus');
+        attentionPhase = 'plus';
+      } else {
+        letterEl.textContent = pickRandom();
+        letterEl.classList.remove('is-plus');
+        attentionPhase = 'letter';
+      }
     }, 700);
   }
   function pickRandom() {
@@ -744,6 +762,8 @@
   }
   function stopAttention() {
     clearInterval(attentionInterval);
+    const letterEl = $('bigLetter');
+    if (letterEl) letterEl.classList.remove('is-plus');
     window.removeEventListener('keydown', onTap);
   }
   // 简易蜂鸣（Web Audio）
