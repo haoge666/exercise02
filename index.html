@@ -236,6 +236,11 @@
     line-height: 1;
     font-family: 'Courier New', monospace;
     letter-spacing: 20px;
+    /* 锁死高度,让 + 居中显示,避免上方提示被上下挤压抖动 */
+    height: 340px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .big-letter.is-plus {
     font-size: 180px;
