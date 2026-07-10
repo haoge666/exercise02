@@ -387,7 +387,7 @@
         <div class="emoji right" data-pos="right">😊</div>
       </div>
     </div>
-    <div class="timer" id="timer-saccade">30</div>
+    <div class="timer" id="timer-saccade">50</div>
   </div>
 
   <!-- 训练3：凝视 -->
@@ -418,14 +418,13 @@
   <!-- 训练5：数字倒背 -->
   <div class="screen hidden" id="screen-digit">
     <div class="title">数字倒背</div>
-    <div class="subtitle">记住这串数字，然后倒着念出来</div>
+    <div class="subtitle">看着这串数字，倒着念出来</div>
     <div class="content">
       <div class="digit-display" id="digitDisplay">8 3 5 1 7</div>
-      <div class="digit-prompt" id="digitPrompt">3 秒后开始记忆…</div>
+      <div class="digit-prompt" id="digitPrompt">换一组可刷新数字</div>
     </div>
     <div class="timer" id="timer-digit">30</div>
     <div class="digit-actions">
-      <button class="digit-btn" id="btn-showDigits">显示数字</button>
       <button class="digit-btn" id="btn-nextDigit">换一组</button>
     </div>
   </div>
@@ -473,7 +472,7 @@
   // ============ 配置 ============
   const STEPS = [
     { id: 'breath',     name: '4-6 呼吸法',    duration: 60, type: 'breath' },   // 4+6=10s × 6 次
-    { id: 'saccade',    name: '反扫视训练',    duration: 30, type: 'saccade' },
+    { id: 'saccade',    name: '反扫视训练',    duration: 50, type: 'saccade' },
     { id: 'gaze',       name: '凝视专注',      duration: 20, type: 'gaze' },
     { id: 'attention',  name: '持续注意力',    duration: 60, type: 'attention' },
     { id: 'digit',      name: '数字倒背',      duration: 30, type: 'digit' },
@@ -794,33 +793,15 @@
     for (let i = 0; i < len; i++) s += Math.floor(Math.random() * 10);
     digitSequence = s;
     $('digitDisplay').textContent = s.split('').join(' ');
-    $('digitPrompt').textContent = '3 秒后开始记忆…';
+    $('digitPrompt').textContent = '换一组可刷新数字';
   }
   function startDigit() {
     newDigits();
-    digitShowPhase = 'preview';
-    function switchToRecall() {
-      if (!started || currentStep !== 4) return;
-      if (paused) { setTimeout(switchToRecall, 400); return; }
-      $('digitDisplay').textContent = '? ? ?';
-      $('digitPrompt').textContent = '请倒着念出这串数字';
-      digitShowPhase = 'recall';
-    }
-    setTimeout(switchToRecall, 3000);
+    digitShowPhase = 'recall';
   }
   function stopDigit() {
     // nothing
   }
-  $('btn-showDigits').addEventListener('click', () => {
-    $('digitDisplay').textContent = digitSequence.split('').join(' ');
-    $('digitPrompt').textContent = '再记 2 秒…';
-    setTimeout(() => {
-      if (currentStep === 4) {
-        $('digitDisplay').textContent = '? ? ?';
-        $('digitPrompt').textContent = '请倒着念出这串数字';
-      }
-    }, 2000);
-  });
   $('btn-nextDigit').addEventListener('click', newDigits);
 
   // ============ 训练主流程 ============
